@@ -20,15 +20,14 @@ def read_cf_amazon(file_name):
 
 
 def read_cf_yelp2018(file_name):
-    inter_mat = list()
+    inter_mat = []
     lines = open(file_name, "r").readlines()
     for l in lines:
         tmps = l.strip()
         inters = [int(i) for i in tmps.split(" ")]
         u_id, pos_ids = inters[0], inters[1:]
         pos_ids = list(set(pos_ids))
-        for i_id in pos_ids:
-            inter_mat.append([u_id, i_id])
+        inter_mat.extend([u_id, i_id] for i_id in pos_ids)
     return np.array(inter_mat)
 
 
@@ -103,16 +102,16 @@ def load_data(model_args):
     dataset = args.dataset
     directory = args.data_path + dataset + '/'
 
-    if dataset == 'gowalla' or dataset == 'yelp2018' or dataset == 'aminer':
+    if dataset in ['gowalla', 'yelp2018', 'aminer']:
         read_cf = read_cf_yelp2018
     else:
         read_cf = read_cf_amazon
 
     print('reading train and test user-item set ...')
-    train_cf = read_cf(directory + 'train.txt')
-    test_cf = read_cf(directory + 'test.txt')
+    train_cf = read_cf(f'{directory}train.txt')
+    test_cf = read_cf(f'{directory}test.txt')
     if args.dataset in ['aminer', 'amazon', 'ml-1m', 'ali']:
-        valid_cf = read_cf(directory + 'valid.txt')
+        valid_cf = read_cf(f'{directory}valid.txt')
     else:
         valid_cf = test_cf
     statistics(train_cf, valid_cf, test_cf)

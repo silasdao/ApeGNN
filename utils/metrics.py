@@ -27,9 +27,7 @@ def average_precision(r,cut):
     """
     r = np.asarray(r)
     out = [precision_at_k(r, k + 1) for k in range(cut) if r[k]]
-    if not out:
-        return 0.
-    return np.sum(out)/float(min(cut, np.sum(r)))
+    return 0. if not out else np.sum(out)/float(min(cut, np.sum(r)))
 
 
 def mean_average_precision(rs):
@@ -74,9 +72,7 @@ def ndcg_at_k(r, k, ground_truth, method=1):
     else:
         sent_list = [1.0]*len(GT) + [0.0]*(k-len(GT))
     dcg_max = dcg_at_k(sent_list, k, method)
-    if not dcg_max:
-        return 0.
-    return dcg_at_k(r, k, method) / dcg_max
+    return 0. if not dcg_max else dcg_at_k(r, k, method) / dcg_max
 
 
 def recall_at_k(r, k, all_pos_num):
@@ -88,16 +84,10 @@ def recall_at_k(r, k, all_pos_num):
 
 def hit_at_k(r, k):
     r = np.array(r)[:k]
-    if np.sum(r) > 0:
-        return 1.
-    else:
-        return 0.
+    return 1. if np.sum(r) > 0 else 0.
 
 def F1(pre, rec):
-    if pre + rec > 0:
-        return (2.0 * pre * rec) / (pre + rec)
-    else:
-        return 0.
+    return (2.0 * pre * rec) / (pre + rec) if pre + rec > 0 else 0.
 
 def AUC(ground_truth, prediction):
     try:

@@ -154,11 +154,16 @@ class HeatKernel(nn.Module):
         if self.ns == 'rns':  # n_negs = 1
             neg_gcn_embs = item_gcn_emb[neg_item[:, :self.K]]
         else:
-            neg_gcn_embs = []
-            for k in range(self.K):
-                neg_gcn_embs.append(self.negative_sampling(user_gcn_emb, item_gcn_emb,
-                                                           user, neg_item[:, k * self.n_negs: (k + 1) * self.n_negs],
-                                                           pos_item))
+            neg_gcn_embs = [
+                self.negative_sampling(
+                    user_gcn_emb,
+                    item_gcn_emb,
+                    user,
+                    neg_item[:, k * self.n_negs : (k + 1) * self.n_negs],
+                    pos_item,
+                )
+                for k in range(self.K)
+            ]
             neg_gcn_embs = torch.stack(neg_gcn_embs, dim=1)
 
         return self.create_bpr_loss(user_gcn_emb[user], item_gcn_emb[pos_item], neg_gcn_embs)

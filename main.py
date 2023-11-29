@@ -76,7 +76,7 @@ def main(args, run, train_cf, user_dict, n_params, norm_mat, deg, outdeg):
         model = HeatKernel(n_params, args, norm_mat, deg).to(device)
     if args.gnn == 'ApeGNN_APPNP':
         model = APPNP(n_params, args, norm_mat, deg).to(device)
-    
+
     """define optimizer"""
     optimizer = torch.optim.Adam([{'params': model.parameters(),
                                    'lr': args.lr}])
@@ -88,6 +88,7 @@ def main(args, run, train_cf, user_dict, n_params, norm_mat, deg, outdeg):
 
     hyper = {"dim": args.dim, "l2": args.l2, "hops": args.context_hops}
     print("Start hyper parameters: ", hyper)
+    hits = 0
     for epoch in range(args.epoch):
         # shuffle training data
         train_cf_ = train_cf
@@ -98,7 +99,6 @@ def main(args, run, train_cf, user_dict, n_params, norm_mat, deg, outdeg):
         """training"""
         model.train()
         loss, s = 0, 0
-        hits = 0
         train_s_t = time()
         while s + args.batch_size <= len(train_cf):
             batch = get_feed_dict(train_cf_,
@@ -128,7 +128,7 @@ def main(args, run, train_cf, user_dict, n_params, norm_mat, deg, outdeg):
             model.eval()
             test_s_t = time()
             test_ret, user_result, deg_recall, deg_recall_mean = test(model, user_dict, n_params, deg, mode='test')
-            with open('./logs/' + args.gnn + '_deg_recall_mean_' + str(args.context_hops) + '_' + str(args.dataset) + '.txt', 'w') as f:
+            with open(f'./logs/{args.gnn}_deg_recall_mean_{str(args.context_hops)}_{str(args.dataset)}.txt', 'w') as f:
                 for deg_ in deg_recall_mean:
                     f.write(str(deg_) + '\t' + str(deg_recall_mean[deg_]) + '\n')
             f.close()
@@ -166,7 +166,10 @@ def main(args, run, train_cf, user_dict, n_params, norm_mat, deg, outdeg):
 
             """save weight"""
             if valid_ret['recall'][0] == cur_best_pre_0 and args.save:
-                torch.save(model.state_dict(), args.out_dir + f'{args.dataset}_{args.dim}_{args.context_hops}_{args.l2}_' + args.gnn + '.ckpt')
+                torch.save(
+                    model.state_dict(),
+                    f'{args.out_dir}{args.dataset}_{args.dim}_{args.context_hops}_{args.l2}_{args.gnn}.ckpt',
+                )
                 best_epoch = epoch
         else:
             # logging.info('training loss at epoch %d: %f' % (epoch, loss.item()))
@@ -175,7 +178,7 @@ def main(args, run, train_cf, user_dict, n_params, norm_mat, deg, outdeg):
     print('early stopping at %d, recall@20:%.4f, best_epoch at %d' % (epoch, cur_best_pre_0, best_epoch))
     print("Seed:", run)
     print("End hyper parameters: ", hyper)
-    print(f"Best valid_ret['recall']: ", cur_best_pre_0)
+    print("Best valid_ret['recall']: ", cur_best_pre_0)
     return cur_best_pre_0
 
 
@@ -197,8 +200,10 @@ if __name__ == '__main__':
     print("trials: ", trials)
     study = optuna.create_study(sampler=optuna.samplers.GridSampler(search_space))
     study.optimize(lambda trial: opt_objective(trial, args, train_cf, user_dict, n_params, norm_mat, deg, outdeg), n_trials=trials)
-    joblib.dump(study,
-                f'{args.dataset}_{args.dim}_{args.context_hops}_{args.l2}_study_' + args.gnn + '.pkl')
+    joblib.dump(
+        study,
+        f'{args.dataset}_{args.dim}_{args.context_hops}_{args.l2}_study_{args.gnn}.pkl',
+    )
     e = datetime.datetime.now()
     print(study.best_trial.params)
     print("time of end: ", e)

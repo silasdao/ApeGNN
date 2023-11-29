@@ -21,10 +21,7 @@ deg_recall = dict()
 deg_recall_mean = dict()
 
 def c(user_pos_test, test_items, rating, Ks):
-    item_score = {}
-    for i in test_items:
-        item_score[i] = rating[i]
-
+    item_score = {i: rating[i] for i in test_items}
     K_max = max(Ks)
     K_max_item_score = heapq.nlargest(K_max, item_score, key=item_score.get)
 
@@ -50,32 +47,25 @@ def get_auc(item_score, user_pos_test):
             r.append(1)
         else:
             r.append(0)
-    auc = AUC(ground_truth=r, prediction=posterior)
-    return auc
+    return AUC(ground_truth=r, prediction=posterior)
 
 def ranklist_by_heapq(user_pos_test, test_items, rating, Ks):
-	item_score = {}
-	for i in test_items:
-		item_score[i] = rating[i]
+    item_score = {i: rating[i] for i in test_items}
+    K_max = max(Ks)
+    K_max_item_score = heapq.nlargest(K_max, item_score, key=item_score.get)
 
-	K_max = max(Ks)
-	K_max_item_score = heapq.nlargest(K_max, item_score, key=item_score.get)
-
-	r = []
-	for i in K_max_item_score:
-		if i in user_pos_test:
-			r.append(1)
-		else:
-			r.append(0)
-	auc = 0.0
-	return r, auc
+    r = []
+    for i in K_max_item_score:
+    	if i in user_pos_test:
+    		r.append(1)
+    	else:
+    		r.append(0)
+    auc = 0.0
+    return r, auc
 
 
 def ranklist_by_sorted(user_pos_test, test_items, rating, Ks):
-    item_score = {}
-    for i in test_items:
-        item_score[i] = rating[i]
-
+    item_score = {i: rating[i] for i in test_items}
     K_max = max(Ks)
     K_max_item_score = heapq.nlargest(K_max, item_score, key=item_score.get)
 
@@ -122,8 +112,7 @@ def test_one_user(x):
         r, auc = ranklist_by_heapq(user_pos_test, test_items, rating, Ks)
     else:
         r, auc = ranklist_by_sorted(user_pos_test, test_items, rating, Ks)
-    evaluate_result = get_performance(user_pos_test, r, auc, Ks)
-    return evaluate_result
+    return get_performance(user_pos_test, r, auc, Ks)
 
 
 def test(model, user_dict, n_params, deg, mode='test'):
@@ -195,16 +184,13 @@ def test(model, user_dict, n_params, deg, mode='test'):
         user_batch_rating_uid = zip(rate_batch, user_list_batch)
         batch_result = pool.map(test_one_user, user_batch_rating_uid)
         count += len(batch_result)
-        i = 0 
-        for re in batch_result:
+        for i, re in enumerate(batch_result):
             user_recall_result[user_list_batch[i]] = re['recall'].tolist()[0]
             result['precision'] += re['precision']/n_test_users
             result['recall'] += re['recall']/n_test_users
             result['ndcg'] += re['ndcg']/n_test_users
             result['hit_ratio'] += re['hit_ratio']/n_test_users
             result['auc'] += re['auc']/n_test_users
-            i += 1
-
     for index, val in enumerate(deg.tolist()):
         if index < n_users:
             user_deg = int(val[0])
